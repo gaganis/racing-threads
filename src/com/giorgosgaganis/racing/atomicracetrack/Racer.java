@@ -1,5 +1,7 @@
 package com.giorgosgaganis.racing.atomicracetrack;
 
+import com.giorgosgaganis.racing.RaceVerifier;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;

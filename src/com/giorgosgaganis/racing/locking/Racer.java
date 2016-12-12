@@ -1,5 +1,7 @@
 package com.giorgosgaganis.racing.locking;
 
+import com.giorgosgaganis.racing.RaceVerifier;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +55,11 @@ public class Racer implements Runnable {
 
         executorService.awaitTermination(10, TimeUnit.SECONDS);
         printTrack(raceTrack);
+        if(RaceVerifier.verifyResult(raceTrack)) {
+            System.out.println("Result OK");
+        } else {
+            System.out.println("Racers have crashed!(ie the result is not legal)");
+        }
     }
 
     @Override

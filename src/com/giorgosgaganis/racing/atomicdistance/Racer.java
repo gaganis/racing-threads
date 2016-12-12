@@ -1,4 +1,4 @@
-package com.giorgosgaganis.racing.atomicclaim;
+package com.giorgosgaganis.racing.atomicdistance;
 
 import com.giorgosgaganis.racing.RaceVerifier;
 
@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
 /**
@@ -21,15 +22,15 @@ public class Racer implements Runnable {
 
     private final char[][] raceTrack;
 
-    private final AtomicIntegerArray centerLaneClaims;
+    private final AtomicInteger distance;
     private final AtomicBoolean upperLaneClaim;
 
     public Racer(char name, int startPosition, char[][] raceTrack,
-                 AtomicIntegerArray centerLaneClaims, AtomicBoolean upperLaneClaim) {
+                 AtomicInteger distance, AtomicBoolean upperLaneClaim) {
         this.raceTrack = raceTrack;
         this.startPosition = startPosition;
         this.name = name;
-        this.centerLaneClaims = centerLaneClaims;
+        this.distance= distance;
         this.upperLaneClaim = upperLaneClaim;
     }
 
@@ -41,13 +42,13 @@ public class Racer implements Runnable {
         char[][] raceTrack = new char[LANES][TRACK_LENGTH];
         beautifyTrack(raceTrack);
 
-        AtomicIntegerArray centerLaneClaims = new AtomicIntegerArray(TRACK_LENGTH);
+        AtomicInteger distance = new AtomicInteger(TRACK_LENGTH);
         AtomicBoolean upperLaneClaim = new AtomicBoolean(false);
 
         Racer firstRacer = new Racer('f', 0,
-                raceTrack, centerLaneClaims, upperLaneClaim);
+                raceTrack, distance, upperLaneClaim);
         Racer secondRacer = new Racer('b', TRACK_LENGTH - 1,
-                raceTrack, centerLaneClaims, upperLaneClaim);
+                raceTrack, distance, upperLaneClaim);
 
         ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -57,6 +58,7 @@ public class Racer implements Runnable {
 
         executorService.awaitTermination(10, TimeUnit.SECONDS);
         printTrack(raceTrack);
+
         if(RaceVerifier.verifyResult(raceTrack)) {
             System.out.println("Result OK");
         } else {
@@ -76,7 +78,7 @@ public class Racer implements Runnable {
         for (int position = startPosition;
              position <= TRACK_LENGTH - 1 && position >= 0;
              position += direction) {
-            if (!claimsComplete && !centerLaneClaims.compareAndSet(position, 0, 1)) {
+            if (!claimsComplete && distance.getAndDecrement() <= 0) {
                 if (upperLaneClaim.compareAndSet(false, true)) {
                     lane = 0;
                 } else {
@@ -104,7 +106,6 @@ public class Racer implements Runnable {
             System.out.println();
         }
     }
-
 }
 
 

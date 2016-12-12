@@ -1,5 +1,7 @@
 package com.giorgosgaganis.racing.unsynchronized;
 
+import com.giorgosgaganis.racing.RaceVerifier;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -10,7 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by gaganis on 09/12/16.
  */
 public class Racer implements Runnable {
-    public static final int TRACK_LENGTH = 55215;
+    public static final int TRACK_LENGTH = 100;
     public static final int LANES = 3;
 
     private final char[][] raceTrack;
@@ -50,6 +52,11 @@ public class Racer implements Runnable {
 
         executorService.awaitTermination(10, TimeUnit.SECONDS);
         printTrack(raceTrack);
+        if(RaceVerifier.verifyResult(raceTrack)) {
+            System.out.println("Result OK");
+        } else {
+            System.out.println("Racers have crashed!(ie the result is not legal)");
+        }
     }
 
     @Override
