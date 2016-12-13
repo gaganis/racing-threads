@@ -1,77 +1,38 @@
 package com.giorgosgaganis.racing.locking;
 
-import com.giorgosgaganis.racing.RaceVerifier;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import com.giorgosgaganis.racing.Race;
 
 /**
  * Created by gaganis on 09/12/16.
  */
 public class Racer implements Runnable {
-    public static final int TRACK_LENGTH = 215;
-    public static final int LANES = 3;
 
-
-    private static boolean upperLaneClaim = false;
-
-    private static Lock lock = new ReentrantLock();
-
-    private final char[][] raceTrack;
     private final char name;
+    private final LockingRace lockingRace;
+    private final char[][] raceTrack;
 
     private int position = 0;
     private int lane = 1;
 
     private Racer opponent;
 
-    public Racer(char name, char[][] raceTrack, int startPosition) {
+    public Racer(char name, LockingRace lockingRace, char[][] raceTrack, int startPosition) {
+        this.name = name;
+        this.lockingRace = lockingRace;
         this.raceTrack = raceTrack;
         this.position = startPosition;
-        this.name = name;
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        runRace();
-    }
-
-    private static void runRace() throws InterruptedException {
-        char[][] raceTrack = new char[LANES][TRACK_LENGTH];
-        beautifyTrack(raceTrack);
-
-        Racer firstRacer = new Racer('f', raceTrack, 0);
-        Racer secondRacer = new Racer('b', raceTrack, TRACK_LENGTH - 1);
-        firstRacer.setOpponent(secondRacer);
-        secondRacer.setOpponent(firstRacer);
-
-        ExecutorService executorService = Executors.newCachedThreadPool();
-
-        executorService.submit(firstRacer);
-        executorService.submit(secondRacer);
-        executorService.shutdown();
-
-        executorService.awaitTermination(10, TimeUnit.SECONDS);
-        printTrack(raceTrack);
-        if(RaceVerifier.verifyResult(raceTrack)) {
-            System.out.println("Result OK");
-        } else {
-            System.out.println("Racers have crashed!(ie the result is not legal)");
-        }
     }
 
     @Override
     public void run() {
         int direction = position == 0
-                        ? 1
-                        : -1;
+                ? 1
+                : -1;
 
-        for (;;) {
-            lock.lock();
+        for (; ; ) {
+            lockingRace.lock.lock();
             try {
-                if (position < 0 || position > TRACK_LENGTH - 1) {
+                if (position < 0 || position > Race.TRACK_LENGTH - 1) {
                     break;
                 }
                 boolean haveMet = direction > 0
@@ -79,8 +40,8 @@ public class Racer implements Runnable {
                         : position < opponent.position;
 
                 if (haveMet) {
-                    if (upperLaneClaim == false) {
-                        upperLaneClaim = true;
+                    if (lockingRace.upperLaneClaim == false) {
+                        lockingRace.upperLaneClaim = true;
                         lane--;
                         opponent.lane++;
                     }
@@ -88,7 +49,7 @@ public class Racer implements Runnable {
                 raceTrack[lane][position] = name;
                 position += direction;
             } finally {
-                lock.unlock();
+                lockingRace.lock.unlock();
             }
         }
     }
@@ -96,23 +57,4 @@ public class Racer implements Runnable {
     public void setOpponent(Racer opponent) {
         this.opponent = opponent;
     }
-
-    private static void beautifyTrack(char[][] raceTrack) {
-        for (char[] lane : raceTrack) {
-            for (int i = 0; i < lane.length; i++) {
-                lane[i] = '.';
-            }
-        }
-    }
-
-    private static void printTrack(char[][] raceTrack) {
-        for (char[] lane : raceTrack) {
-            for (char c : lane) {
-                System.out.print(c);
-            }
-            System.out.println();
-        }
-    }
 }
-
-
